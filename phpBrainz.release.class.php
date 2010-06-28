@@ -167,7 +167,4 @@ class phpBrainz_Release{
             }
         }
     }
-    
-    public static function 
-    
 }
