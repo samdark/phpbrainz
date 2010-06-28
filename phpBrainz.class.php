@@ -76,6 +76,25 @@ class phpBrainz{
 		"track-rels",
 		"url-rels"
         );
+
+    //Holds the valid "include" types for artist lookups
+    private $validArtistInt = array(
+        "aliases",
+        "release-groups",
+        "artist-rels",
+        "label-rels",
+        "release-rels",
+        "track-rels",
+        "url-rels",
+        "tags",
+        "ratings",
+        "user-tags",
+        "user-ratings",
+        "counts",
+        "release-events",
+        "discs",
+        "labels"
+        );
 	
 	/**
 	 * Performs a query based on the parameters
@@ -223,6 +242,31 @@ class phpBrainz{
 	   $release = $this->parseReleaseXML($xml->release);
 	   return $release;
 	}
+
+	/**
+	 * Retrieves an artist given the musicbrainz id
+	 * and an array of items to retrieve.
+	 *
+	 * @param string $mbid
+	 * @param array $artistIncludes
+	 * @return phpBrainz_Artist
+	 */
+	public function getArtist($mbid, $artistIncludes=null){
+	   if(!is_array($artistIncludes) && !is_null($artistIncludes)){
+	       die(print("getArtist only takes 1 mbid and, if you wish, 1 array."));
+	   }
+	   $url = ARTIST_URL.$mbid."?type=xml&inc=";
+	   
+           $url .= implode("+",$artistIncludes);
+           
+	   $xml = simplexml_load_file($url);
+	   if($xml === false){
+	   	throw new Exception("Unable to load XML file. URL: ".$url);
+	   }
+	   $artist = $this->parseArtistXML($xml->artist);
+	   return $artist;
+	}
+
 	/**
 	 * Tests whether the input string 
 	 * has the same form of a valid 
