@@ -1,0 +1,7 @@
+phpBrainz is a PHP library for accessing MusicBrainz (http://musicbrainz.org), an online database with huge amounts of data on recorded music. It is modeled after python-musicbrainz2, the next-generation MusicBrainz library for python and the reference implementation created by the MusicBrainz project itself.
+
+Approximate usage is to require phpBrainz.class.php and then with a shiny new phpBrainz() object, pull out some ->getTrack(), ->getRelease(), ->findTrack(), and ->findRelease() magic. Soon to come is an additional ->getArtist(). The code should, however, be relatively understandable, and the examples in the cleverly-named examples/ directory will additionally supplement your learning.
+
+phpBrainz was originally written by Jeff Sherlock (olds on GitHub) but this file and some recent changes have been made by Ian McEwen (ianmcorvidae).
+
+Enjoy!
