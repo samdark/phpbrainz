@@ -78,7 +78,7 @@ class phpBrainz{
         );
 
     //Holds the valid "include" types for artist lookups
-    private $validArtistInt = array(
+    private $validArtistInc = array(
         "aliases",
         "release-groups",
         "artist-rels",
@@ -210,9 +210,13 @@ class phpBrainz{
 	   if(!is_array($trackIncludes) && !is_null($trackIncludes)){
 	       die(print("getTrack only takes 1 mbid and, if you wish, 1 array."));
 	   }
-	   $url = TRACK_URL.$mbid."?type=xml&inc=";
-	   
+
+       if (is_null($trackIncludes)) {
+           $url = TRACK_URL.$mbid."?type=xml";
+       } else {
+           $url = TRACK_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$trackIncludes);
+       }
            
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
@@ -227,13 +231,20 @@ class phpBrainz{
 	 * and an array of items to retrieve.
 	 *
 	 * @param string $mbid
-	 * @param array $trackIncludes
+	 * @param array $albumIncludes
 	 * @return phpBrainz_Release
 	 */
-	public function getRelease($mbid, $albumIncludes){
-	   $url = RELEASE_URL.$mbid."?type=xml&inc=";
-           
+	public function getRelease($mbid, $albumIncludes=null){
+	   if(!is_array($albumIncludes) && !is_null($trackIncludes)){
+	       die(print("getRelease only takes 1 mbid and, if you wish, 1 array."));
+	   }
+
+       if (is_null($albumIncludes)) {
+           $url = RELEASE_URL.$mbid."?type=xml";
+       } else {
+           $url = RELEASE_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$albumIncludes);
+       }
            
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
@@ -255,9 +266,12 @@ class phpBrainz{
 	   if(!is_array($artistIncludes) && !is_null($artistIncludes)){
 	       die(print("getArtist only takes 1 mbid and, if you wish, 1 array."));
 	   }
-	   $url = ARTIST_URL.$mbid."?type=xml&inc=";
-	   
+       if (is_null($artistIncludes)) {
+           $url = ARTIST_URL.$mbid."?type=xml";
+       } else { 
+           $url = ARTIST_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$artistIncludes);
+       }
            
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
