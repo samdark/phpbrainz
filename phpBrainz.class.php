@@ -22,12 +22,12 @@ Copyright (c) 2007 Jeff Sherlock
  * Contains most of the querying and processing
  * methods for communicating with the musicbrainz
  * XML webservice.
- * 
+ *
  * @author Jeff Sherlock
  * @copyright Jeff Sherlock 2007
  * @package phpBrainz
  * @name phpBrainz
- * 
+ *
  */
 error_reporting(E_ALL);
 define('ARTIST_URL', "http://musicbrainz.org/ws/1/artist/");
@@ -48,7 +48,7 @@ require($curdir."phpBrainz.release.class.php");
 
 
 
-class phpBrainz{	
+class phpBrainz{
 	//Holds the valid "include" types for album lookups
 	private $validAlbumInc = array(
     		"artist",
@@ -64,7 +64,7 @@ class phpBrainz{
     		"track-level-rels",
     		"labels"
 	);
-	
+
 	//Holds the valid "include" types for track lookups
 	private $validTrackInc = array(
 		"artist",
@@ -95,66 +95,68 @@ class phpBrainz{
         "discs",
         "labels"
         );
-	
+
 	/**
 	 * Performs a query based on the parameters
-	 * supplied in the ReleaseFilter object. Returns 
-	 * an array of possible matches with scores, as 
+	 * supplied in the ReleaseFilter object. Returns
+	 * an array of possible matches with scores, as
 	 * returned by the musicBrainz XML web service.
-	 * Note that these types of queries only return some 
+	 * Note that these types of queries only return some
 	 * information, and not all the information available
 	 * about a particular release is available using
 	 * this type of query. You will need to get the
 	 * MusicBrainz id (mbid) and perform a lookup with
-	 * getRelease to return complete information about 
+	 * getRelease to return complete information about
 	 * a release.
 	 *
 	 * @return array
 	 * @param phpBrainz_ReleaseFilter
-	 * 
+	 *
 	 */
 	public function findRelease(phpBrainz_ReleaseFilter $releaseFilterObj){
 	    if(sizeof($releaseFilterObj->createParameters())<1){
-	        throw new Exception('The release filter object needs 
+	        throw new Exception('The release filter object needs
 	        at least 1 argument to create a query.');
 	    }
-	    
+
 		$queryStr = RELEASE_URL."?type=xml";
 		$args = $releaseFilterObj->createParameters();
 		foreach($args as $key=>$value){
 		    $args[$key] = utf8_encode($value);
 		}
-		
+
 		$queryStr .= "&".http_build_query($args);
 
 		$xml = simplexml_load_file($queryStr);
-		
+
                 if($xml === false){
-	   	    throw new Exception("Unable to load XML file. URL: ".$url);
+	   	    throw new Exception("Unable to load XML file. URL: ".$queryStr);
 	  	}
-                
+
+		if(empty($xml->{'release-list'}))
+			return array();
+
 		$releases = array();
-		
-                foreach($xml->{'release-list'}->release as $release){
-		    
+
+		foreach($xml->{'release-list'}->release as $release){
 		    $releaseObj = $this->parseReleaseXML($release);
 		    $releases[] = $releaseObj;
 		}
 		return $releases;
 	}
-	
+
 	/**
 	 * Performs a query based on the parameters
-	 * supplied in the TrackFilter object. Returns 
-	 * an array of possible matches with scores, as 
+	 * supplied in the TrackFilter object. Returns
+	 * an array of possible matches with scores, as
 	 * returned by the musicBrainz XML web service.
-	 * Note that these types of queries only return some 
+	 * Note that these types of queries only return some
 	 * information, and not all the information available
 	 * about a particular track is available using
 	 * this type of query. You will need to get the
 	 * MusicBrainz id (mbid) and perform a lookup with
-	 * getTrack to return complete information about 
-	 * a release. This method returns an array of 
+	 * getTrack to return complete information about
+	 * a release. This method returns an array of
 	 * Track objects that are possible matches.
 	 *
 	 * @param phpBrainz_TrackFilter $trackFilterObj
@@ -162,42 +164,45 @@ class phpBrainz{
 	 */
 	public function findTrack(phpBrainz_TrackFilter $trackFilterObj){
 	    if(sizeof($trackFilterObj->createParameters())<1){
-		throw new Exception('The release filter object needs 
+		throw new Exception('The release filter object needs
 	        at least 1 argument to create a query.');
 	    }
-	    
+
 	    $queryStr = TRACK_URL."?type=xml";
 	    $args = $trackFilterObj->createParameters();
-	    
+
 	    foreach($args as $key=>$value){
 		$args[$key] = utf8_encode($value);
 	    }
-		
+
 	    $queryStr .= "&".http_build_query($args);
 
 	    $xml = simplexml_load_file($queryStr);
-	    
+
             if($xml === false){
-                throw new Exception("Unable to load XML file. URL: ".$url);
+                throw new Exception("Unable to load XML file. URL: ".$queryStr);
 	    }
-            
+
+		if(empty($xml->{'track-list'}))
+			return array();
+
 	    $tracks = array();
-	
+
 	    foreach($xml->{'track-list'}->track as $track){
 		# Must specify the namespace
 	        $attrNS = $track->attributes("http://musicbrainz.org/ns/ext-1.0#");
-		
+
 	        $trackRels = array();
 	        foreach($track->{'release-list'}->release as $release){
 	            $trackRels[] = $this->parseReleaseXML($release);
-	            
+
 	        }
 	        $newTrack = $this->parseTrackXML($track);
-	        $tracks[] = $newTrack; 
+	        $tracks[] = $newTrack;
 	    }
 	    return $tracks;
-	}	
-	
+	}
+
 	/**
 	 * Retrieves a track given the musicbrainz id
 	 * and an array of items to retrieve.
@@ -217,7 +222,7 @@ class phpBrainz{
            $url = TRACK_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$trackIncludes);
        }
-           
+
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
 	   	throw new Exception("Unable to load XML file. URL: ".$url);
@@ -235,7 +240,7 @@ class phpBrainz{
 	 * @return phpBrainz_Release
 	 */
 	public function getRelease($mbid, $albumIncludes=null){
-	   if(!is_array($albumIncludes) && !is_null($trackIncludes)){
+	   if(!is_array($albumIncludes) && !is_null($albumIncludes)){
 	       die(print("getRelease only takes 1 mbid and, if you wish, 1 array."));
 	   }
 
@@ -245,7 +250,7 @@ class phpBrainz{
            $url = RELEASE_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$albumIncludes);
        }
-           
+
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
 	   		throw new Exception("Unable to load XML file. URL: ".$url);
@@ -268,11 +273,11 @@ class phpBrainz{
 	   }
        if (is_null($artistIncludes)) {
            $url = ARTIST_URL.$mbid."?type=xml";
-       } else { 
+       } else {
            $url = ARTIST_URL.$mbid."?type=xml&inc=";
            $url .= implode("+",$artistIncludes);
        }
-           
+
 	   $xml = simplexml_load_file($url);
 	   if($xml === false){
 	   	throw new Exception("Unable to load XML file. URL: ".$url);
@@ -282,10 +287,10 @@ class phpBrainz{
 	}
 
 	/**
-	 * Tests whether the input string 
-	 * has the same form of a valid 
-	 * musicbrainz id. Does not check to 
-	 * see if the id exists in the 
+	 * Tests whether the input string
+	 * has the same form of a valid
+	 * musicbrainz id. Does not check to
+	 * see if the id exists in the
 	 * musicbrainz database.
 	 *
 	 * @param string $str
@@ -306,7 +311,7 @@ class phpBrainz{
 	       }
 	    return true;
 	}
-	
+
 	private function parseArtistXML($artist){
 	    $newArtist = new phpBrainz_Artist();
 	    $newArtist->setName((string)$artist->name);
@@ -316,18 +321,18 @@ class phpBrainz{
 	    $newArtist->setEndDate((string)$artist->{'life-span'}['end']);
 	    return $newArtist;
 	}
-	
+
 	private function parseTrackXML($track){
 	    $newTrack = new phpBrainz_Track();
 	    $newArtist = $this->parseArtistXML($track->artist);
-	    
+
 	    $attrNS = $track->attributes("http://musicbrainz.org/ns/ext-1.0#");
 	    $newTrack->setArtist($newArtist);
 	    $newTrack->setId((string)$track['id']);
 	    $newTrack->setDuration((intval((string)$track->duration)));
 	    $newTrack->setTitle((string)$track->title);
 	    $newTrack->setScore((string)$attrNS->score);
-	    
+
 	    if(isset($track->{'puid-list'})){
 		foreach($track->{'puid-list'}->puid as $puid){
 		    $newTrack->addPuid((string)$puid['id']);
@@ -337,14 +342,14 @@ class phpBrainz{
                 $newRelease = $this->parseReleaseXML($track->{'release-list'}->release);
                 $newTrack->addRelease($newRelease);
 	    }
-	    return $newTrack;	        
-	}		
-	
+	    return $newTrack;
+	}
+
 	private function parseReleaseXML($release){
-	   
+
             $releaseObj = new phpBrainz_Release();
             $artistObj = $this->parseArtistXML($release->artist);
-        
+
             $attrNS = $release->attributes("http://musicbrainz.org/ns/ext-1.0#");
             $releaseObj->setScore((string)$attrNS->score);
             $releaseObj->setArtist($artistObj);
@@ -353,7 +358,7 @@ class phpBrainz{
             $releaseObj->setTracksCount((string)$release->{'track-list'}['count']);
             $releaseObj->setTracksOffset((string)$release->{'track-list'}['offset']);
             $releaseObj->setDiscCount((string)$release->{'disc-list'}['count']);
-	   
+
             if(isset($release->{'track-list'})){
                 foreach($release->{'track-list'}->track as $trackXML){
                     $releaseObj->addTrack($this->parseTrackXML($trackXML));
@@ -362,9 +367,8 @@ class phpBrainz{
             if(isset($release->asin)){
                 $releaseObj->setASIN((string)$release->asin);
             }
- 
+
             return $releaseObj;
-	}    
-	
+	}
+
 }
-?>
